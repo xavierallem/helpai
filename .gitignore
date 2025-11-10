@@ -4,6 +4,7 @@ specs/
 STARTUP_GUIDE.md
 STORAGE_INFO.md
 STREAMING_FIXES.md
+.claude/
 
 # IDE
 .vscode/
