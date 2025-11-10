@@ -1,0 +1,32 @@
+# AI-Generated Documentation and Specs
+specs/
+.specify/
+STARTUP_GUIDE.md
+STORAGE_INFO.md
+STREAMING_FIXES.md
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~.nib
