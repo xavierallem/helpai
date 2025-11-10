@@ -2,6 +2,8 @@
 
 A text-based legal document Q&A system using RAG (Retrieval-Augmented Generation) with local LLM inference.
 
+![Application Screenshot](assets/test.png)
+
 ## Features
 
 - **Document Upload**: Upload PDF legal documents (drag-and-drop supported)
