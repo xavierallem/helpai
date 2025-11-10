@@ -206,11 +206,3 @@ Common issues:
 - Uploaded documents stored locally in `data/uploads/`
 - Basic security (suitable for personal/small team use)
 
-## License
-
-[Add your license here]
-
-## Support
-
-For issues, questions, or contributions, please refer to the STARTUP_GUIDE.md file.
-# helpai

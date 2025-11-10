@@ -10,6 +10,7 @@ STREAMING_FIXES.md
 *.claude.md
 claude-*.md
 claude_*.md
+CLAUDE.md
 
 # Other AI-Generated Files
 *.ai.md
