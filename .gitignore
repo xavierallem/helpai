@@ -4,7 +4,18 @@ specs/
 STARTUP_GUIDE.md
 STORAGE_INFO.md
 STREAMING_FIXES.md
+
+# Claude AI
 .claude/
+*.claude.md
+claude-*.md
+claude_*.md
+
+# Other AI-Generated Files
+*.ai.md
+*-ai.md
+ai-generated/
+.ai/
 
 # IDE
 .vscode/
