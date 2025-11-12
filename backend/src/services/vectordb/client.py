@@ -9,6 +9,7 @@ from chromadb.config import Settings as ChromaSettings
 from sentence_transformers import SentenceTransformer
 
 from ...models.chunk import DocumentChunk, SearchResult
+from ..retrieval import BM25Retriever, Reranker, HybridRetriever
 
 logger = logging.getLogger(__name__)
 
@@ -19,17 +20,44 @@ class ChromaDBClient:
     COLLECTION_NAME = "legal_documents"
     EMBEDDING_MODEL = "all-MiniLM-L6-v2"
 
-    def __init__(self, persist_directory: Path):
+    def __init__(
+        self,
+        persist_directory: Path,
+        enable_hybrid_search: bool = True,
+        enable_reranking: bool = True,
+        reranker_model: str = "ms-marco-MiniLM-L-12-v2",
+        rrf_k: int = 60,
+        dense_weight: float = 0.5,
+        sparse_weight: float = 0.5
+    ):
         """
         Initialize ChromaDB client.
 
         Args:
             persist_directory: Directory to persist ChromaDB data
+            enable_hybrid_search: Whether to enable hybrid (dense + sparse) search
+            enable_reranking: Whether to enable result reranking
+            reranker_model: Reranking model name
+            rrf_k: RRF constant parameter
+            dense_weight: Weight for dense retrieval in RRF
+            sparse_weight: Weight for sparse retrieval in RRF
         """
         self.persist_directory = persist_directory
+        self.enable_hybrid_search = enable_hybrid_search
+        self.enable_reranking = enable_reranking
+        self.reranker_model = reranker_model
+        self.rrf_k = rrf_k
+        self.dense_weight = dense_weight
+        self.sparse_weight = sparse_weight
+
         self.client: Optional[chromadb.ClientAPI] = None
         self.collection: Optional[chromadb.Collection] = None
         self.embedding_model: Optional[SentenceTransformer] = None
+
+        # Hybrid search components
+        self.bm25_retriever: Optional[BM25Retriever] = None
+        self.reranker: Optional[Reranker] = None
+        self.hybrid_retriever: Optional[HybridRetriever] = None
 
     def initialize(self) -> None:
         """Initialize ChromaDB client and collection."""
@@ -60,6 +88,30 @@ class ChromaDBClient:
                 f"ChromaDB initialized. Collection '{self.COLLECTION_NAME}' "
                 f"contains {self.collection.count()} chunks"
             )
+
+            # Initialize hybrid search components if enabled
+            if self.enable_hybrid_search:
+                logger.info("Initializing hybrid search components...")
+
+                # Initialize BM25 retriever
+                self.bm25_retriever = BM25Retriever()
+
+                # Initialize reranker if enabled
+                if self.enable_reranking:
+                    self.reranker = Reranker(model_name=self.reranker_model)
+                else:
+                    self.reranker = None
+
+                # Initialize hybrid retriever
+                self.hybrid_retriever = HybridRetriever(
+                    bm25_retriever=self.bm25_retriever,
+                    reranker=self.reranker,
+                    rrf_k=self.rrf_k,
+                    dense_weight=self.dense_weight,
+                    sparse_weight=self.sparse_weight
+                )
+
+                logger.info("Hybrid search components initialized successfully")
 
         except Exception as e:
             logger.error(f"Failed to initialize ChromaDB: {e}")
@@ -109,6 +161,11 @@ class ChromaDBClient:
             )
 
             logger.info(f"Added {len(chunks)} chunks to ChromaDB")
+
+            # Also add to BM25 index if hybrid search is enabled
+            if self.enable_hybrid_search and self.bm25_retriever:
+                self.bm25_retriever.add_chunks(chunks)
+                logger.info(f"Added {len(chunks)} chunks to BM25 index")
 
         except Exception as e:
             logger.error(f"Failed to add chunks to ChromaDB: {e}")
@@ -169,6 +226,58 @@ class ChromaDBClient:
             logger.error(f"Failed to search ChromaDB: {e}")
             raise
 
+    def search_hybrid(
+        self,
+        query: str,
+        top_k: int = 5,
+        apply_reranking: bool = True,
+        dense_top_k: int = 20,
+        sparse_top_k: int = 20
+    ) -> List[SearchResult]:
+        """
+        Search using hybrid retrieval (dense + sparse) with optional reranking.
+
+        Args:
+            query: Search query text
+            top_k: Final number of results to return
+            apply_reranking: Whether to apply reranking (if enabled)
+            dense_top_k: Number of dense results to use for fusion
+            sparse_top_k: Number of sparse results to use for fusion
+
+        Returns:
+            List of search results ordered by hybrid ranking
+
+        Raises:
+            RuntimeError: If client is not initialized or hybrid search not enabled
+        """
+        if not self.enable_hybrid_search or not self.hybrid_retriever:
+            # Fallback to regular dense search
+            logger.warning("Hybrid search not enabled, falling back to dense search")
+            return self.search_similar(query, n_results=top_k)
+
+        try:
+            # Get dense results from ChromaDB
+            dense_results = self.search_similar(query, n_results=dense_top_k)
+
+            # Perform hybrid retrieval
+            hybrid_results = self.hybrid_retriever.retrieve(
+                query=query,
+                dense_results=dense_results,
+                top_k=top_k,
+                apply_reranking=apply_reranking and self.enable_reranking,
+                dense_top_k=dense_top_k,
+                sparse_top_k=sparse_top_k
+            )
+
+            logger.info(f"Hybrid search returned {len(hybrid_results)} results")
+            return hybrid_results
+
+        except Exception as e:
+            logger.error(f"Failed to perform hybrid search: {e}")
+            # Fallback to regular search
+            logger.warning("Falling back to dense search due to error")
+            return self.search_similar(query, n_results=top_k)
+
     def delete_document_chunks(self, document_id: str) -> None:
         """
         Delete all chunks for a specific document.
@@ -186,7 +295,12 @@ class ChromaDBClient:
             self.collection.delete(
                 where={"document_id": document_id}
             )
-            logger.info(f"Deleted chunks for document {document_id}")
+            logger.info(f"Deleted chunks for document {document_id} from ChromaDB")
+
+            # Also delete from BM25 index if hybrid search is enabled
+            if self.enable_hybrid_search and self.bm25_retriever:
+                self.bm25_retriever.delete_document_chunks(document_id)
+                logger.info(f"Deleted chunks for document {document_id} from BM25 index")
 
         except Exception as e:
             logger.error(f"Failed to delete chunks for document {document_id}: {e}")
@@ -206,11 +320,19 @@ class ChromaDBClient:
             raise RuntimeError("ChromaDB client not initialized. Call initialize() first.")
 
         try:
-            return {
+            stats = {
                 "total_chunks": self.collection.count(),
                 "collection_name": self.COLLECTION_NAME,
-                "embedding_model": self.EMBEDDING_MODEL
+                "embedding_model": self.EMBEDDING_MODEL,
+                "hybrid_search_enabled": self.enable_hybrid_search,
+                "reranking_enabled": self.enable_reranking
             }
+
+            # Add hybrid search stats if enabled
+            if self.enable_hybrid_search and self.hybrid_retriever:
+                stats["hybrid_retrieval"] = self.hybrid_retriever.get_stats()
+
+            return stats
 
         except Exception as e:
             logger.error(f"Failed to get collection stats: {e}")
@@ -219,6 +341,15 @@ class ChromaDBClient:
     def shutdown(self) -> None:
         """Shutdown the ChromaDB client."""
         logger.info("Shutting down ChromaDB client")
+
+        # Clean up hybrid search components
+        if self.bm25_retriever:
+            self.bm25_retriever.clear()
+            self.bm25_retriever = None
+
+        self.reranker = None
+        self.hybrid_retriever = None
+
         # ChromaDB client doesn't require explicit cleanup
         self.client = None
         self.collection = None

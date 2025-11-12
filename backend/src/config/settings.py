@@ -24,6 +24,48 @@ class Settings(BaseSettings):
         description="Directory to persist ChromaDB data"
     )
 
+    # Hybrid Retrieval Configuration
+    enable_hybrid_search: bool = Field(
+        default=True,
+        description="Enable hybrid search (dense + sparse retrieval)"
+    )
+    enable_reranking: bool = Field(
+        default=True,
+        description="Enable reranking of search results"
+    )
+    reranker_model: str = Field(
+        default="ms-marco-MiniLM-L-12-v2",
+        description="Reranking model to use (ms-marco-MiniLM-L-12-v2, ms-marco-MultiBERT-L-12, rank-T5-flan)"
+    )
+
+    # Retrieval Parameters
+    num_retrieval_results: int = Field(
+        default=5,
+        description="Number of final results to return"
+    )
+    dense_retrieval_top_k: int = Field(
+        default=20,
+        description="Number of dense (vector) results to retrieve for fusion"
+    )
+    sparse_retrieval_top_k: int = Field(
+        default=20,
+        description="Number of sparse (BM25) results to retrieve for fusion"
+    )
+
+    # RRF (Reciprocal Rank Fusion) Parameters
+    rrf_k: int = Field(
+        default=60,
+        description="RRF constant parameter (typically 60)"
+    )
+    dense_weight: float = Field(
+        default=0.5,
+        description="Weight for dense retrieval in RRF (0-1)"
+    )
+    sparse_weight: float = Field(
+        default=0.5,
+        description="Weight for sparse retrieval in RRF (0-1)"
+    )
+
     # File Upload Configuration
     upload_dir: Path = Field(
         default=Path("./data/uploads"),

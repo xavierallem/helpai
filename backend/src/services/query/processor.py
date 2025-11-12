@@ -22,7 +22,9 @@ class QueryProcessor:
         self,
         vectordb_client: ChromaDBClient,
         llm_client: OllamaClient,
-        num_results: int = 5
+        num_results: int = 5,
+        use_hybrid_search: bool = True,
+        use_reranking: bool = True
     ):
         """
         Initialize query processor.
@@ -31,10 +33,14 @@ class QueryProcessor:
             vectordb_client: ChromaDB client for vector search
             llm_client: Ollama client for text generation
             num_results: Number of documents to retrieve
+            use_hybrid_search: Whether to use hybrid retrieval (dense + sparse)
+            use_reranking: Whether to apply reranking to results
         """
         self.vectordb_client = vectordb_client
         self.llm_client = llm_client
         self.num_results = num_results
+        self.use_hybrid_search = use_hybrid_search
+        self.use_reranking = use_reranking
 
     async def process_query(
         self,
@@ -59,10 +65,24 @@ class QueryProcessor:
         try:
             # Step 1: Retrieve relevant documents
             logger.info(f"Searching for relevant documents: '{query_text[:50]}...'")
-            search_results = self.vectordb_client.search_similar(
-                query=query_text,
-                n_results=self.num_results
-            )
+
+            # Use hybrid search if enabled, otherwise fallback to dense search
+            if self.use_hybrid_search and self.vectordb_client.enable_hybrid_search:
+                logger.info("Using hybrid retrieval (dense + sparse + reranking)")
+                from ...config.settings import settings
+                search_results = self.vectordb_client.search_hybrid(
+                    query=query_text,
+                    top_k=self.num_results,
+                    apply_reranking=self.use_reranking,
+                    dense_top_k=settings.dense_retrieval_top_k,
+                    sparse_top_k=settings.sparse_retrieval_top_k
+                )
+            else:
+                logger.info("Using dense retrieval only")
+                search_results = self.vectordb_client.search_similar(
+                    query=query_text,
+                    n_results=self.num_results
+                )
 
             if not search_results:
                 logger.warning("No relevant documents found")

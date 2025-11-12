@@ -39,11 +39,13 @@ def get_query_processor(
         model=settings.ollama_model
     )
 
-    # Create and return query processor
+    # Create and return query processor with hybrid search settings
     return QueryProcessor(
         vectordb_client=chromadb_client,
         llm_client=llm_client,
-        num_results=5
+        num_results=settings.num_retrieval_results,
+        use_hybrid_search=settings.enable_hybrid_search,
+        use_reranking=settings.enable_reranking
     )
 
 
@@ -144,11 +146,20 @@ async def submit_query_stream(
                 f"Processing streaming query for session {session.session_id}: '{request.query_text[:50]}...'"
             )
 
-            # Step 1: Retrieve relevant documents
-            search_results = query_processor.vectordb_client.search_similar(
-                query=request.query_text,
-                n_results=query_processor.num_results
-            )
+            # Step 1: Retrieve relevant documents using hybrid search
+            if query_processor.use_hybrid_search and query_processor.vectordb_client.enable_hybrid_search:
+                search_results = query_processor.vectordb_client.search_hybrid(
+                    query=request.query_text,
+                    top_k=query_processor.num_results,
+                    apply_reranking=query_processor.use_reranking,
+                    dense_top_k=settings.dense_retrieval_top_k,
+                    sparse_top_k=settings.sparse_retrieval_top_k
+                )
+            else:
+                search_results = query_processor.vectordb_client.search_similar(
+                    query=request.query_text,
+                    n_results=query_processor.num_results
+                )
 
             # Send sources first
             sources_data = {

@@ -34,8 +34,16 @@ async def lifespan(app: FastAPI):
 
     try:
         # Initialize ChromaDB
-        logger.info("Initializing ChromaDB...")
-        dependencies.chromadb_client = ChromaDBClient(persist_directory=settings.chroma_persist_dir)
+        logger.info("Initializing ChromaDB with hybrid search and reranking...")
+        dependencies.chromadb_client = ChromaDBClient(
+            persist_directory=settings.chroma_persist_dir,
+            enable_hybrid_search=settings.enable_hybrid_search,
+            enable_reranking=settings.enable_reranking,
+            reranker_model=settings.reranker_model,
+            rrf_k=settings.rrf_k,
+            dense_weight=settings.dense_weight,
+            sparse_weight=settings.sparse_weight
+        )
         dependencies.chromadb_client.initialize()
 
         # Initialize Session Manager
