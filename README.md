@@ -1,6 +1,7 @@
 # Legal Document Assistant
 
 A text-based legal document Q&A system using RAG (Retrieval-Augmented Generation) with local LLM inference.
+With Hybrid Rag and Rerank for complex Retrieval
 
 ![Application Screenshot](assets/test.png)
 
@@ -12,6 +13,8 @@ A text-based legal document Q&A system using RAG (Retrieval-Augmented Generation
 - **Conversation Context**: Maintains conversation history within sessions
 - **Local & Private**: All processing happens locally using Ollama
 - **Real-time Status**: See document processing status in real-time
+
+
 
 ## Tech Stack
 
@@ -28,6 +31,16 @@ A text-based legal document Q&A system using RAG (Retrieval-Augmented Generation
 - Vite (build tool)
 - TanStack Query (state management)
 - Axios (HTTP client)
+
+## RAG Models and Algorithms
+
+| Stage | Model/Algorithm | Type | Size |
+|-------|----------------|------|------|
+| **Chunking** | RecursiveCharacterTextSplitter | Rule-based | N/A |
+| **Dense Retrieval** | all-MiniLM-L6-v2 | Bi-encoder | ~80MB, 384 dims |
+| **Sparse Retrieval** | BM25Okapi | Statistical | N/A |
+| **Reranking** | ms-marco-MiniLM-L-12-v2 | Cross-encoder | ~130MB |
+| **Generation** | Configurable (Ollama) | LLM | Varies |
 
 ## Quick Start
 
@@ -182,7 +195,6 @@ npm run lint
 
 ## Troubleshooting
 
-See [STARTUP_GUIDE.md](STARTUP_GUIDE.md) for detailed troubleshooting steps.
 
 Common issues:
 - **Ollama not responding**: Run `ollama serve`

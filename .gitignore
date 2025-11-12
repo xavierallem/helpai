@@ -4,7 +4,8 @@ specs/
 STARTUP_GUIDE.md
 STORAGE_INFO.md
 STREAMING_FIXES.md
-
+# Git
+.gitignore
 # Claude AI
 .claude/
 *.claude.md
