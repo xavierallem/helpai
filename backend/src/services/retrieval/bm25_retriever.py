@@ -14,9 +14,6 @@ logger = logging.getLogger(__name__)
 class BM25Retriever:
     """
     BM25-based sparse retrieval for keyword matching.
-
-    Uses BM25Okapi algorithm for efficient sparse retrieval based on
-    term frequency and inverse document frequency.
     """
 
     def __init__(self):
@@ -31,11 +28,6 @@ class BM25Retriever:
         """
         Simple tokenization: lowercase and split on non-alphanumeric characters.
 
-        Args:
-            text: Text to tokenize
-
-        Returns:
-            List of tokens
         """
         # Convert to lowercase and split on non-alphanumeric characters
         tokens = re.findall(r'\w+', text.lower())
@@ -80,13 +72,6 @@ class BM25Retriever:
     def search(self, query: str, top_k: int = 10) -> List[SearchResult]:
         """
         Search for relevant chunks using BM25.
-
-        Args:
-            query: Search query text
-            top_k: Number of top results to return
-
-        Returns:
-            List of SearchResult objects sorted by BM25 score
         """
         if not self.bm25 or not self.chunks:
             logger.warning("BM25 index is empty, returning no results")
@@ -131,11 +116,6 @@ class BM25Retriever:
         """
         Remove all chunks for a specific document from the index.
 
-        Args:
-            document_id: ID of document to remove
-
-        Returns:
-            Number of chunks removed
         """
         if document_id not in self.document_chunks:
             logger.warning(f"Document {document_id} not found in BM25 index")
@@ -172,9 +152,6 @@ class BM25Retriever:
     def get_stats(self) -> Dict:
         """
         Get statistics about the BM25 index.
-
-        Returns:
-            Dictionary with index statistics
         """
         return {
             "total_chunks": len(self.chunks),

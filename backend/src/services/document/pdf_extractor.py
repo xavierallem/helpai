@@ -17,14 +17,7 @@ class PDFExtractor:
         """
         Extract text from a PDF file.
 
-        Args:
-            file_path: Path to the PDF file
 
-        Returns:
-            List of tuples (page_number, text_content)
-
-        Raises:
-            Exception: If extraction fails
         """
         try:
             logger.info(f"Extracting text from PDF: {file_path}")
@@ -61,14 +54,6 @@ class PDFExtractor:
         """
         Extract metadata from a PDF file.
 
-        Args:
-            file_path: Path to the PDF file
-
-        Returns:
-            Dictionary with metadata (title, author, page_count, etc.)
-
-        Raises:
-            Exception: If metadata extraction fails
         """
         try:
             doc = fitz.open(file_path)
@@ -94,11 +79,6 @@ class PDFExtractor:
         """
         Validate that a file is a readable PDF.
 
-        Args:
-            file_path: Path to the PDF file
-
-        Returns:
-            True if valid PDF, False otherwise
         """
         try:
             doc = fitz.open(file_path)

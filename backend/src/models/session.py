@@ -62,11 +62,7 @@ class ConversationSession(BaseModel):
         """
         Get recent messages formatted for LLM context.
 
-        Args:
-            max_messages: Maximum number of messages to return
 
-        Returns:
-            List of message dictionaries with role and content
         """
         recent_messages = self.messages[-max_messages:]
         return [

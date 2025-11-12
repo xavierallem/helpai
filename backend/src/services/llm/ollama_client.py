@@ -33,17 +33,7 @@ class OllamaClient:
         """
         Generate a response using Ollama.
 
-        Args:
-            prompt: The prompt to send to the LLM
-            context_messages: Optional conversation history
-            temperature: Sampling temperature (0.0 to 1.0)
-            max_tokens: Maximum tokens to generate
 
-        Returns:
-            Generated text response
-
-        Raises:
-            Exception: If generation fails
         """
         try:
             # Build messages for chat completion
@@ -146,8 +136,6 @@ class OllamaClient:
         """
         Check if the configured model is available.
 
-        Returns:
-            True if model is available, False otherwise
         """
         try:
             models = self.client.list()

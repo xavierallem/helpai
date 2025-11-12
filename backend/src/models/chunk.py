@@ -38,9 +38,6 @@ class DocumentChunk(BaseModel):
     def to_chromadb_format(self) -> tuple[str, str, Dict]:
         """
         Convert chunk to ChromaDB storage format.
-
-        Returns:
-            Tuple of (chunk_id, content, metadata)
         """
         chromadb_metadata = {
             "document_id": str(self.document_id),
@@ -95,14 +92,7 @@ class SearchResult(BaseModel):
         """
         Create SearchResult from ChromaDB query result.
 
-        Args:
-            chunk_id: Chunk identifier
-            content: Chunk text content
-            metadata: Chunk metadata from ChromaDB
-            distance: Distance score (lower is more similar)
 
-        Returns:
-            SearchResult instance
         """
         # Convert distance to similarity (ChromaDB uses L2 distance)
         # For normalized embeddings, similarity = 1 - (distance^2 / 4)

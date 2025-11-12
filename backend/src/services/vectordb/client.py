@@ -179,15 +179,6 @@ class ChromaDBClient:
         """
         Search for similar chunks using semantic search.
 
-        Args:
-            query: Search query text
-            n_results: Number of results to return
-
-        Returns:
-            List of search results ordered by similarity
-
-        Raises:
-            RuntimeError: If client is not initialized
         """
         if not self.collection or not self.embedding_model:
             raise RuntimeError("ChromaDB client not initialized. Call initialize() first.")
@@ -237,18 +228,6 @@ class ChromaDBClient:
         """
         Search using hybrid retrieval (dense + sparse) with optional reranking.
 
-        Args:
-            query: Search query text
-            top_k: Final number of results to return
-            apply_reranking: Whether to apply reranking (if enabled)
-            dense_top_k: Number of dense results to use for fusion
-            sparse_top_k: Number of sparse results to use for fusion
-
-        Returns:
-            List of search results ordered by hybrid ranking
-
-        Raises:
-            RuntimeError: If client is not initialized or hybrid search not enabled
         """
         if not self.enable_hybrid_search or not self.hybrid_retriever:
             # Fallback to regular dense search
@@ -310,11 +289,6 @@ class ChromaDBClient:
         """
         Get statistics about the collection.
 
-        Returns:
-            Dictionary with collection statistics
-
-        Raises:
-            RuntimeError: If client is not initialized
         """
         if not self.collection:
             raise RuntimeError("ChromaDB client not initialized. Call initialize() first.")

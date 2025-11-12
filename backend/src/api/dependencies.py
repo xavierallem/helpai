@@ -14,11 +14,7 @@ def get_chromadb_client() -> ChromaDBClient:
     """
     Dependency to get ChromaDB client.
 
-    Returns:
-        ChromaDBClient instance
 
-    Raises:
-        RuntimeError: If client is not initialized
     """
     if chromadb_client is None:
         raise RuntimeError("ChromaDB client not initialized")
@@ -29,11 +25,7 @@ def get_session_manager() -> SessionManager:
     """
     Dependency to get Session Manager.
 
-    Returns:
-        SessionManager instance
 
-    Raises:
-        RuntimeError: If session manager is not initialized
     """
     if session_manager is None:
         raise RuntimeError("Session manager not initialized")
@@ -44,11 +36,7 @@ def get_document_storage() -> DocumentStorage:
     """
     Dependency to get Document Storage.
 
-    Returns:
-        DocumentStorage instance
 
-    Raises:
-        RuntimeError: If document storage is not initialized
     """
     if document_storage is None:
         raise RuntimeError("Document storage not initialized")

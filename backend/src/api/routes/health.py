@@ -20,8 +20,6 @@ async def health_check(
     """
     Health check endpoint.
 
-    Returns:
-        Dictionary with health status and component information
     """
     try:
         # Get ChromaDB stats

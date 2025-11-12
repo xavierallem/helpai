@@ -45,12 +45,7 @@ class TextChunker:
         """
         Chunk a document into smaller pieces.
 
-        Args:
-            document_id: Document identifier
-            pages_text: List of (page_number, text) tuples
 
-        Returns:
-            List of DocumentChunk objects
         """
         try:
             logger.info(
@@ -98,10 +93,5 @@ class TextChunker:
         """
         Simple text chunking without document metadata.
 
-        Args:
-            text: Text to chunk
-
-        Returns:
-            List of text chunks
         """
         return self.text_splitter.split_text(text)

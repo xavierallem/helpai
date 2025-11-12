@@ -8,12 +8,7 @@ def build_rag_prompt(query: str, search_results: List[SearchResult]) -> str:
     """
     Build a RAG (Retrieval-Augmented Generation) prompt.
 
-    Args:
-        query: User's query
-        search_results: Retrieved document chunks
 
-    Returns:
-        Formatted prompt for the LLM
     """
     # Build context from search results
     context_parts = []
@@ -53,13 +48,7 @@ def build_contextual_prompt(
     """
     Build a prompt with conversation context for multi-turn dialogue.
 
-    Args:
-        query: Current user query
-        search_results: Retrieved document chunks
-        conversation_context: Previous conversation messages
-
-    Returns:
-        Formatted prompt for the LLM
+ 
     """
     # Build context from search results
     context_parts = []

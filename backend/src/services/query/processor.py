@@ -50,15 +50,6 @@ class QueryProcessor:
         """
         Process a user query using RAG pipeline.
 
-        Args:
-            query_text: User's question
-            session: Optional conversation session for context
-
-        Returns:
-            Tuple of (response_text, source_results, processing_time_ms)
-
-        Raises:
-            Exception: If query processing fails
         """
         start_time = time.time()
 
@@ -141,14 +132,7 @@ class QueryProcessor:
         """
         Format the query response for API output.
 
-        Args:
-            response_text: Generated response text
-            search_results: Retrieved document chunks
-            session_id: Session identifier
-            processing_time_ms: Processing time in milliseconds
 
-        Returns:
-            QueryResponse object
         """
         # Convert search results to source documents
         source_documents = [

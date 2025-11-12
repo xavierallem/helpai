@@ -29,8 +29,6 @@ class SessionManager:
         """
         Create a new conversation session.
 
-        Returns:
-            New ConversationSession instance
         """
         session = ConversationSession()
         self.sessions[session.session_id] = session
@@ -41,11 +39,7 @@ class SessionManager:
         """
         Get an existing session by ID.
 
-        Args:
-            session_id: Session identifier
 
-        Returns:
-            ConversationSession if found, None otherwise
         """
         session = self.sessions.get(session_id)
         if session:
@@ -60,11 +54,7 @@ class SessionManager:
         """
         Get existing session or create a new one.
 
-        Args:
-            session_id: Optional session identifier
 
-        Returns:
-            ConversationSession instance
         """
         if session_id:
             session = self.get_session(session_id)
@@ -80,11 +70,7 @@ class SessionManager:
         """
         Delete a session.
 
-        Args:
-            session_id: Session identifier
 
-        Returns:
-            True if session was deleted, False if not found
         """
         if session_id in self.sessions:
             del self.sessions[session_id]
@@ -96,8 +82,6 @@ class SessionManager:
         """
         Remove sessions that have exceeded the timeout.
 
-        Returns:
-            Number of sessions cleaned up
         """
         now = datetime.utcnow()
         timeout_delta = timedelta(minutes=self.timeout_minutes)
@@ -154,8 +138,6 @@ class SessionManager:
         """
         Get session manager statistics.
 
-        Returns:
-            Dictionary with statistics
         """
         return {
             "total_sessions": len(self.sessions),

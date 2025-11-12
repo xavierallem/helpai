@@ -15,11 +15,7 @@ class HybridRetriever:
     """
     Hybrid retrieval system combining dense and sparse search.
 
-    Uses Reciprocal Rank Fusion (RRF) to merge results from:
-    - Dense retrieval (semantic/vector search via ChromaDB)
-    - Sparse retrieval (keyword/BM25 search)
 
-    Optionally applies reranking for final result quality improvement.
     """
 
     def __init__(
@@ -30,16 +26,7 @@ class HybridRetriever:
         dense_weight: float = 0.5,
         sparse_weight: float = 0.5
     ):
-        """
-        Initialize the hybrid retriever.
 
-        Args:
-            bm25_retriever: BM25 sparse retriever instance
-            reranker: Optional reranker instance
-            rrf_k: RRF parameter (typically 60), controls ranking fusion
-            dense_weight: Weight for dense retrieval results (0-1)
-            sparse_weight: Weight for sparse retrieval results (0-1)
-        """
         self.bm25_retriever = bm25_retriever
         self.reranker = reranker
         self.rrf_k = rrf_k
@@ -58,16 +45,6 @@ class HybridRetriever:
     ) -> List[SearchResult]:
         """
         Merge results using Reciprocal Rank Fusion (RRF).
-
-        RRF formula: score(d) = Σ(1 / (k + rank(d)))
-        where k is a constant (typically 60) and rank is the position in the list.
-
-        Args:
-            dense_results: Results from dense retrieval
-            sparse_results: Results from sparse retrieval
-
-        Returns:
-            Merged and sorted list of SearchResult objects
         """
         # Create a mapping of chunk_id to SearchResult
         chunk_map: Dict[str, SearchResult] = {}
@@ -134,16 +111,6 @@ class HybridRetriever:
         """
         Perform hybrid retrieval combining dense and sparse search.
 
-        Args:
-            query: Search query text
-            dense_results: Results from dense (vector) retrieval
-            top_k: Final number of results to return
-            apply_reranking: Whether to apply reranking
-            dense_top_k: Number of dense results to use for fusion
-            sparse_top_k: Number of sparse results to use for fusion
-
-        Returns:
-            List of SearchResult objects with hybrid ranking
         """
         # Limit dense results to top_k for fusion
         dense_results = dense_results[:dense_top_k]
@@ -180,8 +147,6 @@ class HybridRetriever:
         """
         Get statistics about the hybrid retriever.
 
-        Returns:
-            Dictionary with retriever statistics
         """
         return {
             "bm25_stats": self.bm25_retriever.get_stats(),

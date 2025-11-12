@@ -12,22 +12,9 @@ logger = logging.getLogger(__name__)
 class Reranker:
     """
     Reranking service using FlashRank.
-
-    Uses a cross-encoder model to rerank retrieved documents based on
-    their relevance to the query. This provides more accurate ranking
-    than the initial retrieval scores.
     """
 
     def __init__(self, model_name: str = "ms-marco-MiniLM-L-12-v2"):
-        """
-        Initialize the reranker.
-
-        Args:
-            model_name: Name of the reranking model to use
-                       Options: "ms-marco-MiniLM-L-12-v2" (default, balanced)
-                               "ms-marco-MultiBERT-L-12" (multilingual)
-                               "rank-T5-flan" (higher quality, slower)
-        """
         self.model_name = model_name
         self.ranker: Optional[Ranker] = None
         self._initialize_ranker()
@@ -51,13 +38,6 @@ class Reranker:
         """
         Rerank search results based on relevance to the query.
 
-        Args:
-            query: The search query
-            results: List of initial search results
-            top_k: Number of top results to return (None = return all)
-
-        Returns:
-            Reranked list of SearchResult objects with updated similarity scores
         """
         if not results:
             logger.debug("No results to rerank")
@@ -125,7 +105,5 @@ class Reranker:
         """
         Check if the reranker is available and ready to use.
 
-        Returns:
-            True if reranker is initialized, False otherwise
         """
         return self.ranker is not None

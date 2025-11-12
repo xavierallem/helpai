@@ -22,15 +22,6 @@ async def get_session(
     """
     Get session information.
 
-    Args:
-        session_id: Session identifier
-        session_manager: Session manager instance
-
-    Returns:
-        Session information
-
-    Raises:
-        HTTPException: If session not found
     """
     session = session_manager.get_session(session_id)
 
@@ -56,15 +47,7 @@ async def delete_session(
     """
     Delete a session.
 
-    Args:
-        session_id: Session identifier
-        session_manager: Session manager instance
 
-    Returns:
-        Success message
-
-    Raises:
-        HTTPException: If session not found
     """
     deleted = session_manager.delete_session(session_id)
 

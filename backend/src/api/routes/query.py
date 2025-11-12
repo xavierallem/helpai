@@ -27,11 +27,6 @@ def get_query_processor(
     """
     Dependency to get query processor.
 
-    Args:
-        chromadb_client: ChromaDB client instance
-
-    Returns:
-        QueryProcessor instance
     """
     # Initialize LLM client
     llm_client = OllamaClient(
@@ -58,16 +53,6 @@ async def submit_query(
     """
     Submit a query and get a response.
 
-    Args:
-        request: User query request
-        query_processor: Query processor instance
-        session_manager: Session manager instance
-
-    Returns:
-        Query response with generated answer and source documents
-
-    Raises:
-        HTTPException: If query processing fails
     """
     try:
         # Get or create session
@@ -121,16 +106,7 @@ async def submit_query_stream(
     """
     Submit a query and get a streaming response.
 
-    Args:
-        request: User query request
-        query_processor: Query processor instance
-        session_manager: Session manager instance
 
-    Returns:
-        StreamingResponse with Server-Sent Events
-
-    Raises:
-        HTTPException: If query processing fails
     """
     async def generate_stream() -> AsyncGenerator[str, None]:
         try:

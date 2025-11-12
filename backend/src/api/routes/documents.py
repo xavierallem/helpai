@@ -22,14 +22,7 @@ def get_document_processor(
     chromadb_client: ChromaDBClient = Depends(get_chromadb_client)
 ) -> DocumentProcessor:
     """
-    Dependency to get document processor.
 
-    Args:
-        storage: Document storage instance
-        chromadb_client: ChromaDB client instance
-
-    Returns:
-        DocumentProcessor instance
     """
     return DocumentProcessor(
         storage=storage,
@@ -47,17 +40,6 @@ async def upload_document(
 ) -> DocumentResponse:
     """
     Upload and process a legal document.
-
-    Args:
-        file: PDF file to upload
-        title: Document title
-        processor: Document processor instance
-
-    Returns:
-        Document information
-
-    Raises:
-        HTTPException: If upload or processing fails
     """
     try:
         # Validate file type
@@ -114,11 +96,7 @@ async def list_documents(
     """
     List all documents.
 
-    Args:
-        storage: Document storage instance
 
-    Returns:
-        List of all documents
     """
     try:
         documents = storage.list_documents()
@@ -152,15 +130,7 @@ async def get_document(
     """
     Get document information.
 
-    Args:
-        document_id: Document identifier
-        storage: Document storage instance
 
-    Returns:
-        Document information
-
-    Raises:
-        HTTPException: If document not found
     """
     document = storage.get_document(document_id)
 
@@ -189,15 +159,6 @@ async def delete_document(
     """
     Delete a document and its chunks.
 
-    Args:
-        document_id: Document identifier
-        processor: Document processor instance
-
-    Returns:
-        Success message
-
-    Raises:
-        HTTPException: If document not found or deletion fails
     """
     try:
         deleted = await processor.delete_document(document_id)

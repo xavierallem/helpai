@@ -37,13 +37,6 @@ class DocumentStorage:
         """
         Create a new document entry.
 
-        Args:
-            title: Document title
-            file_path: Path to the stored file
-            file_size_bytes: File size in bytes
-
-        Returns:
-            LegalDocument instance
         """
         document = LegalDocument(
             title=title,
@@ -61,11 +54,6 @@ class DocumentStorage:
         """
         Get a document by ID.
 
-        Args:
-            document_id: Document identifier
-
-        Returns:
-            LegalDocument if found, None otherwise
         """
         return self.documents.get(document_id)
 
@@ -73,8 +61,6 @@ class DocumentStorage:
         """
         List all documents.
 
-        Returns:
-            List of all documents
         """
         return list(self.documents.values())
 
@@ -120,11 +106,7 @@ class DocumentStorage:
         """
         Delete a document and its file.
 
-        Args:
-            document_id: Document identifier
 
-        Returns:
-            True if deleted, False if not found
         """
         document = self.documents.get(document_id)
         if not document:
@@ -149,15 +131,7 @@ class DocumentStorage:
         """
         Save uploaded file to disk.
 
-        Args:
-            file_content: File content as bytes
-            filename: Original filename
 
-        Returns:
-            Path to saved file
-
-        Raises:
-            Exception: If file save fails
         """
         try:
             # Generate unique filename
