@@ -47,7 +47,7 @@ jobs:
       - name: Fetch base branch
         if: steps.check_body.outputs.generate == 'true'
         run: |
-          git fetch origin "${{ github.event.pull_request.base.ref }}" --depth=0
+          git fetch origin "${{ github.event.pull_request.base.ref }}" --unshallow || git fetch origin "${{ github.event.pull_request.base.ref }}"
 
       - name: Build PR context
         if: steps.check_body.outputs.generate == 'true'
