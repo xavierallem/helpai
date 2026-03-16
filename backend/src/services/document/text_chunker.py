@@ -1,7 +1,6 @@
 """Text chunking service for splitting documents into smaller pieces."""
 
 import logging
-from typing import List, Tuple
 from uuid import UUID
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -14,11 +13,7 @@ logger = logging.getLogger(__name__)
 class TextChunker:
     """Chunks text into smaller pieces for vector storage."""
 
-    def __init__(
-        self,
-        chunk_size: int = 1000,
-        chunk_overlap: int = 200
-    ):
+    def __init__(self, chunk_size: int = 1000, chunk_overlap: int = 200):
         """
         Initialize text chunker.
 
@@ -34,23 +29,19 @@ class TextChunker:
             chunk_size=chunk_size,
             chunk_overlap=chunk_overlap,
             length_function=len,
-            separators=["\n\n", "\n", ". ", " ", ""]
+            separators=["\n\n", "\n", ". ", " ", ""],
         )
 
     def chunk_document(
-        self,
-        document_id: UUID,
-        pages_text: List[Tuple[int, str]]
-    ) -> List[DocumentChunk]:
+        self, document_id: UUID, pages_text: list[tuple[int, str]]
+    ) -> list[DocumentChunk]:
         """
         Chunk a document into smaller pieces.
 
 
         """
         try:
-            logger.info(
-                f"Chunking document {document_id} with {len(pages_text)} pages"
-            )
+            logger.info(f"Chunking document {document_id} with {len(pages_text)} pages")
 
             chunks = []
             chunk_index = 0
@@ -70,10 +61,7 @@ class TextChunker:
                         content=chunk_text,
                         page_number=page_number,
                         chunk_index=chunk_index,
-                        metadata={
-                            "page": str(page_number),
-                            "chunk_size": str(len(chunk_text))
-                        }
+                        metadata={"page": str(page_number), "chunk_size": str(len(chunk_text))},
                     )
                     chunks.append(chunk)
                     chunk_index += 1
@@ -89,7 +77,7 @@ class TextChunker:
             logger.error(f"Failed to chunk document {document_id}: {e}")
             raise
 
-    def chunk_text(self, text: str) -> List[str]:
+    def chunk_text(self, text: str) -> list[str]:
         """
         Simple text chunking without document metadata.
 

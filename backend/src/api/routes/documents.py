@@ -1,7 +1,6 @@
 """Document management endpoints."""
 
 import logging
-from typing import List
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
@@ -19,16 +18,11 @@ router = APIRouter()
 
 def get_document_processor(
     storage: DocumentStorage = Depends(get_document_storage),
-    chromadb_client: ChromaDBClient = Depends(get_chromadb_client)
+    chromadb_client: ChromaDBClient = Depends(get_chromadb_client),
 ) -> DocumentProcessor:
-    """
-
-    """
+    """ """
     return DocumentProcessor(
-        storage=storage,
-        vectordb_client=chromadb_client,
-        chunk_size=1000,
-        chunk_overlap=200
+        storage=storage, vectordb_client=chromadb_client, chunk_size=1000, chunk_overlap=200
     )
 
 
@@ -36,18 +30,15 @@ def get_document_processor(
 async def upload_document(
     file: UploadFile = File(...),
     title: str = Form(...),
-    processor: DocumentProcessor = Depends(get_document_processor)
+    processor: DocumentProcessor = Depends(get_document_processor),
 ) -> DocumentResponse:
     """
     Upload and process a legal document.
     """
     try:
         # Validate file type
-        if not file.filename.lower().endswith('.pdf'):
-            raise HTTPException(
-                status_code=400,
-                detail="Only PDF files are supported"
-            )
+        if not file.filename.lower().endswith(".pdf"):
+            raise HTTPException(status_code=400, detail="Only PDF files are supported")
 
         # Read file content
         file_content = await file.read()
@@ -57,16 +48,14 @@ async def upload_document(
         if len(file_content) > max_size:
             raise HTTPException(
                 status_code=400,
-                detail=f"File size exceeds maximum allowed size of {max_size // (1024*1024)}MB"
+                detail=f"File size exceeds maximum allowed size of {max_size // (1024 * 1024)}MB",
             )
 
         logger.info(f"Uploading document: {title} ({file.filename})")
 
         # Upload and process document
         document = await processor.upload_and_process_document(
-            title=title,
-            file_content=file_content,
-            filename=file.filename
+            title=title, file_content=file_content, filename=file.filename
         )
 
         return DocumentResponse(
@@ -76,23 +65,20 @@ async def upload_document(
             uploaded_at=document.uploaded_at,
             processed_at=document.processed_at,
             total_chunks=document.total_chunks,
-            file_size_bytes=document.file_size_bytes
+            file_size_bytes=document.file_size_bytes,
         )
 
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Failed to upload document: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to upload document: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to upload document: {str(e)}")
 
 
-@router.get("", response_model=List[DocumentResponse])
+@router.get("", response_model=list[DocumentResponse])
 async def list_documents(
-    storage: DocumentStorage = Depends(get_document_storage)
-) -> List[DocumentResponse]:
+    storage: DocumentStorage = Depends(get_document_storage),
+) -> list[DocumentResponse]:
     """
     List all documents.
 
@@ -109,23 +95,19 @@ async def list_documents(
                 uploaded_at=doc.uploaded_at,
                 processed_at=doc.processed_at,
                 total_chunks=doc.total_chunks,
-                file_size_bytes=doc.file_size_bytes
+                file_size_bytes=doc.file_size_bytes,
             )
             for doc in documents
         ]
 
     except Exception as e:
         logger.error(f"Failed to list documents: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to list documents: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to list documents: {str(e)}")
 
 
 @router.get("/{document_id}", response_model=DocumentResponse)
 async def get_document(
-    document_id: UUID,
-    storage: DocumentStorage = Depends(get_document_storage)
+    document_id: UUID, storage: DocumentStorage = Depends(get_document_storage)
 ) -> DocumentResponse:
     """
     Get document information.
@@ -135,10 +117,7 @@ async def get_document(
     document = storage.get_document(document_id)
 
     if not document:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Document {document_id} not found"
-        )
+        raise HTTPException(status_code=404, detail=f"Document {document_id} not found")
 
     return DocumentResponse(
         document_id=document.document_id,
@@ -147,14 +126,13 @@ async def get_document(
         uploaded_at=document.uploaded_at,
         processed_at=document.processed_at,
         total_chunks=document.total_chunks,
-        file_size_bytes=document.file_size_bytes
+        file_size_bytes=document.file_size_bytes,
     )
 
 
 @router.delete("/{document_id}")
 async def delete_document(
-    document_id: UUID,
-    processor: DocumentProcessor = Depends(get_document_processor)
+    document_id: UUID, processor: DocumentProcessor = Depends(get_document_processor)
 ) -> dict:
     """
     Delete a document and its chunks.
@@ -164,10 +142,7 @@ async def delete_document(
         deleted = await processor.delete_document(document_id)
 
         if not deleted:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Document {document_id} not found"
-            )
+            raise HTTPException(status_code=404, detail=f"Document {document_id} not found")
 
         logger.info(f"Deleted document {document_id}")
 
@@ -177,7 +152,4 @@ async def delete_document(
         raise
     except Exception as e:
         logger.error(f"Failed to delete document {document_id}: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to delete document: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to delete document: {str(e)}")

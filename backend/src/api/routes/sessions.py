@@ -16,8 +16,7 @@ router = APIRouter()
 
 @router.get("/sessions/{session_id}", response_model=SessionResponse)
 async def get_session(
-    session_id: UUID,
-    session_manager: SessionManager = Depends(get_session_manager)
+    session_id: UUID, session_manager: SessionManager = Depends(get_session_manager)
 ) -> SessionResponse:
     """
     Get session information.
@@ -26,23 +25,19 @@ async def get_session(
     session = session_manager.get_session(session_id)
 
     if not session:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Session {session_id} not found or expired"
-        )
+        raise HTTPException(status_code=404, detail=f"Session {session_id} not found or expired")
 
     return SessionResponse(
         session_id=session.session_id,
         message_count=len(session.messages),
         created_at=session.created_at,
-        last_activity=session.last_activity
+        last_activity=session.last_activity,
     )
 
 
 @router.delete("/sessions/{session_id}")
 async def delete_session(
-    session_id: UUID,
-    session_manager: SessionManager = Depends(get_session_manager)
+    session_id: UUID, session_manager: SessionManager = Depends(get_session_manager)
 ) -> dict:
     """
     Delete a session.
@@ -52,10 +47,7 @@ async def delete_session(
     deleted = session_manager.delete_session(session_id)
 
     if not deleted:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Session {session_id} not found"
-        )
+        raise HTTPException(status_code=404, detail=f"Session {session_id} not found")
 
     logger.info(f"Deleted session {session_id}")
 

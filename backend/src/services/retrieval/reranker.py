@@ -1,7 +1,7 @@
 """Reranking service for improving retrieval quality."""
 
 import logging
-from typing import List, Optional
+
 from flashrank import Ranker, RerankRequest
 
 from ...models.chunk import SearchResult
@@ -16,7 +16,7 @@ class Reranker:
 
     def __init__(self, model_name: str = "ms-marco-MiniLM-L-12-v2"):
         self.model_name = model_name
-        self.ranker: Optional[Ranker] = None
+        self.ranker: Ranker | None = None
         self._initialize_ranker()
 
     def _initialize_ranker(self) -> None:
@@ -30,11 +30,8 @@ class Reranker:
             self.ranker = None
 
     def rerank(
-        self,
-        query: str,
-        results: List[SearchResult],
-        top_k: Optional[int] = None
-    ) -> List[SearchResult]:
+        self, query: str, results: list[SearchResult], top_k: int | None = None
+    ) -> list[SearchResult]:
         """
         Rerank search results based on relevance to the query.
 
@@ -54,10 +51,7 @@ class Reranker:
                 for result in results
             ]
 
-            rerank_request = RerankRequest(
-                query=query,
-                passages=passages
-            )
+            rerank_request = RerankRequest(query=query, passages=passages)
 
             # Perform reranking
             reranked = self.ranker.rerank(rerank_request)
@@ -67,10 +61,7 @@ class Reranker:
             for item in reranked:
                 # Find original result by chunk_id
                 chunk_id = item["meta"]["chunk_id"]
-                original_result = next(
-                    (r for r in results if r.chunk_id == chunk_id),
-                    None
-                )
+                original_result = next((r for r in results if r.chunk_id == chunk_id), None)
 
                 if original_result:
                     # Create new SearchResult with reranking score
@@ -84,8 +75,8 @@ class Reranker:
                         metadata={
                             **(original_result.metadata or {}),
                             "original_score": str(original_result.similarity_score),
-                            "rerank_score": str(float(item["score"]))
-                        }
+                            "rerank_score": str(float(item["score"])),
+                        },
                     )
                     reranked_results.append(reranked_result)
 

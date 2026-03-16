@@ -21,7 +21,7 @@ class DocumentProcessor:
         storage: DocumentStorage,
         vectordb_client: ChromaDBClient,
         chunk_size: int = 1000,
-        chunk_overlap: int = 200
+        chunk_overlap: int = 200,
     ):
         """
         Initialize document processor.
@@ -35,10 +35,7 @@ class DocumentProcessor:
         self.storage = storage
         self.vectordb_client = vectordb_client
         self.pdf_extractor = PDFExtractor()
-        self.text_chunker = TextChunker(
-            chunk_size=chunk_size,
-            chunk_overlap=chunk_overlap
-        )
+        self.text_chunker = TextChunker(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
 
     async def process_document(self, document_id: UUID) -> None:
         """
@@ -56,10 +53,7 @@ class DocumentProcessor:
 
         try:
             # Update status to processing
-            self.storage.update_document_status(
-                document_id,
-                ProcessingStatus.PROCESSING
-            )
+            self.storage.update_document_status(document_id, ProcessingStatus.PROCESSING)
 
             logger.info(f"Starting processing for document {document_id}")
 
@@ -85,9 +79,7 @@ class DocumentProcessor:
 
             # Step 5: Update document status to completed
             self.storage.update_document_status(
-                document_id,
-                ProcessingStatus.COMPLETED,
-                total_chunks=len(chunks)
+                document_id, ProcessingStatus.COMPLETED, total_chunks=len(chunks)
             )
 
             logger.info(
@@ -99,19 +91,14 @@ class DocumentProcessor:
             # Update status to failed
             error_msg = str(e)
             self.storage.update_document_status(
-                document_id,
-                ProcessingStatus.FAILED,
-                error_message=error_msg
+                document_id, ProcessingStatus.FAILED, error_message=error_msg
             )
 
             logger.error(f"Failed to process document {document_id}: {error_msg}")
             raise
 
     async def upload_and_process_document(
-        self,
-        title: str,
-        file_content: bytes,
-        filename: str
+        self, title: str, file_content: bytes, filename: str
     ) -> LegalDocument:
         """
         Upload and process a document.
@@ -129,7 +116,7 @@ class DocumentProcessor:
         """
         try:
             # Validate file extension
-            if not filename.lower().endswith('.pdf'):
+            if not filename.lower().endswith(".pdf"):
                 raise ValueError("Only PDF files are supported")
 
             # Save uploaded file
@@ -137,9 +124,7 @@ class DocumentProcessor:
 
             # Create document entry
             document = self.storage.create_document(
-                title=title,
-                file_path=str(file_path),
-                file_size_bytes=len(file_content)
+                title=title, file_path=str(file_path), file_size_bytes=len(file_content)
             )
 
             # Process the document

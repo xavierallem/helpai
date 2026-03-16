@@ -1,8 +1,8 @@
 """FastAPI dependencies."""
 
+from ..services.document.storage import DocumentStorage
 from ..services.session.manager import SessionManager
 from ..services.vectordb.client import ChromaDBClient
-from ..services.document.storage import DocumentStorage
 
 # Global instances (set by main.py on startup)
 chromadb_client: ChromaDBClient = None
