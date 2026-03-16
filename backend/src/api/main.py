@@ -103,8 +103,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Import and include routers
-from .routes import documents, health, query, sessions
+# Import and include routers (must be after app creation to avoid circular imports)
+from .routes import documents, health, query, sessions  # noqa: E402
 
 app.include_router(health.router, tags=["health"])
 app.include_router(query.router, prefix="/api", tags=["query"])

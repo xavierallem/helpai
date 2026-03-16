@@ -86,7 +86,25 @@ jobs:
           import json
           from pathlib import Path
 
-          context = Path("pr_context.txt").read_text()
+          raw = Path("pr_context.txt").read_text()
+
+          # GPT-4.1 limit is 8000 tokens (~4 chars/token).
+          # Reserve ~1000 tokens for the prompt template → ~28000 chars for context.
+          MAX_CHARS = 28_000
+          if len(raw) > MAX_CHARS:
+              # Keep the header (title/branches/commits) and truncate only the diff
+              diff_marker = "\nDiff:\n"
+              split = raw.find(diff_marker)
+              if split != -1:
+                  header = raw[: split + len(diff_marker)]
+                  diff = raw[split + len(diff_marker) :]
+                  allowed = MAX_CHARS - len(header) - 100
+                  diff = diff[:allowed] + "\n\n[... diff truncated due to size ...]"
+                  raw = header + diff
+              else:
+                  raw = raw[:MAX_CHARS] + "\n\n[... truncated due to size ...]"
+
+          context = raw
 
           payload = {
               "model": "openai/gpt-4.1",

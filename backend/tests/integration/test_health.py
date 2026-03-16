@@ -2,8 +2,6 @@
 
 from unittest.mock import MagicMock
 
-import pytest
-
 
 class TestHealthEndpoint:
     def test_health_returns_200(self, api_client):
@@ -39,7 +37,9 @@ class TestHealthEndpoint:
 
     def test_health_degraded_on_chromadb_error(self, session_manager):
         from unittest.mock import AsyncMock, patch
+
         from fastapi.testclient import TestClient
+
         from src.api import dependencies
         from src.api.main import app
 
