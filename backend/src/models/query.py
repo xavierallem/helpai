@@ -11,9 +11,7 @@ class SourceDocument(BaseModel):
     document_id: UUID = Field(..., description="ID of the source document")
     chunk_id: str = Field(..., description="ID of the specific chunk")
     content: str = Field(..., description="Relevant excerpt from the document")
-    page_number: int | None = Field(
-        default=None, description="Page number in the source document"
-    )
+    page_number: int | None = Field(default=None, description="Page number in the source document")
     similarity_score: float = Field(..., description="Relevance score (0-1)", ge=0.0, le=1.0)
 
 

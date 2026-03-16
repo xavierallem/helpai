@@ -1,6 +1,5 @@
 """Prompt templates for LLM-based query processing."""
 
-
 from ...models.chunk import SearchResult
 
 

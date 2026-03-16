@@ -2,17 +2,17 @@
 
 from uuid import uuid4
 
-from pydantic import ValidationError
 import pytest
+from pydantic import ValidationError
 
 from src.models.document import LegalDocument, ProcessingStatus
 from src.models.query import QueryResponse, SourceDocument, UserQuery
 from src.models.session import ConversationSession, Message
 
-
 # ---------------------------------------------------------------------------
 # LegalDocument
 # ---------------------------------------------------------------------------
+
 
 class TestLegalDocument:
     def test_defaults(self):
@@ -49,6 +49,7 @@ class TestLegalDocument:
 # ---------------------------------------------------------------------------
 # ConversationSession & Message
 # ---------------------------------------------------------------------------
+
 
 class TestConversationSession:
     def test_create_empty_session(self):
@@ -91,6 +92,7 @@ class TestConversationSession:
 # UserQuery
 # ---------------------------------------------------------------------------
 
+
 class TestUserQuery:
     def test_valid_query(self):
         q = UserQuery(query_text="What is the indemnification clause?")
@@ -113,6 +115,7 @@ class TestUserQuery:
 # ---------------------------------------------------------------------------
 # SourceDocument & QueryResponse
 # ---------------------------------------------------------------------------
+
 
 class TestSourceDocument:
     def test_valid(self):
