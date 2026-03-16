@@ -1,0 +1,189 @@
+name: Auto PR Description
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pull-requests: write
+  models: read
+
+concurrency:
+  group: pr-description-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  generate-description:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Check existing PR body
+        id: check_body
+        env:
+          BODY: ${{ github.event.pull_request.body }}
+        run: |
+          if [ -z "$BODY" ]; then
+            echo "generate=true" >> "$GITHUB_OUTPUT"
+          elif echo "$BODY" | grep -q "<!-- auto-pr-description -->"; then
+            echo "generate=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "generate=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Skip if manual description exists
+        if: steps.check_body.outputs.generate != 'true'
+        run: echo "Manual PR description detected. Skipping."
+
+      - name: Fetch base branch
+        if: steps.check_body.outputs.generate == 'true'
+        run: |
+          git fetch origin "${{ github.event.pull_request.base.ref }}" --depth=0
+
+      - name: Build PR context
+        if: steps.check_body.outputs.generate == 'true'
+        run: |
+          BASE_REF="origin/${{ github.event.pull_request.base.ref }}"
+
+          MERGE_BASE="$(git merge-base "$BASE_REF" HEAD || true)"
+
+          {
+            echo "PR Title:"
+            echo "${{ github.event.pull_request.title }}"
+            echo
+            echo "Base Branch:"
+            echo "${{ github.event.pull_request.base.ref }}"
+            echo
+            echo "Head Branch:"
+            echo "${{ github.event.pull_request.head.ref }}"
+            echo
+            echo "Commits:"
+            git log --no-merges --oneline "$BASE_REF"..HEAD || true
+            echo
+            echo "Diff:"
+            if [ -n "$MERGE_BASE" ]; then
+              echo "[using merge-base: $MERGE_BASE]"
+              git diff --unified=1 "$MERGE_BASE" HEAD
+            else
+              echo "[no merge-base found, falling back to direct diff]"
+              git diff --unified=1 "$BASE_REF" HEAD
+            fi
+          } > pr_context.txt
+
+      - name: Create model payload
+        if: steps.check_body.outputs.generate == 'true'
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          context = Path("pr_context.txt").read_text()
+
+          payload = {
+              "model": "openai/gpt-4.1",
+              "messages": [
+                  {
+                      "role": "system",
+                      "content": (
+                          "Generate concise GitHub pull request descriptions. "
+                          "Be factual, concise, and do not invent intent or business context."
+                      )
+                  },
+                  {
+                      "role": "user",
+                      "content": f"""Write a GitHub PR description.
+
+          Format exactly:
+
+          <!-- auto-pr-description -->
+
+          ## Summary
+          - short explanation
+
+          ## Key Changes
+          - list important implementation changes
+
+          ## Testing
+          - tests added/updated, or Not specified
+
+          ## Risks / Notes
+          - migrations, edge cases, follow-ups, or None
+
+          Rules:
+          - Prefer concrete implementation detail
+          - Mention API, config, schema, migration, refactor changes if present
+          - Do not invent business intent
+          - Keep it short
+
+          Context:
+
+          {context}
+          """
+                  }
+              ]
+          }
+
+          Path("payload.json").write_text(json.dumps(payload))
+          PY
+
+      - name: Call GitHub Models API
+        if: steps.check_body.outputs.generate == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          HTTP_STATUS=$(curl -sS \
+            -D headers.txt \
+            -o response.json \
+            -w "%{http_code}" \
+            -X POST "https://models.github.ai/inference/chat/completions" \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d @payload.json)
+
+          echo "HTTP status: $HTTP_STATUS"
+          echo "=== Headers ==="
+          cat headers.txt || true
+          echo "=== Body ==="
+          cat response.json || true
+
+          if [ "$HTTP_STATUS" -lt 200 ] || [ "$HTTP_STATUS" -ge 300 ]; then
+            echo "Model call failed."
+            exit 1
+          fi
+
+      - name: Parse response
+        if: steps.check_body.outputs.generate == 'true'
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          raw = Path("response.json").read_text().strip()
+          if not raw:
+              raise SystemExit("response.json empty")
+
+          data = json.loads(raw)
+
+          if "choices" not in data or not data["choices"]:
+              raise SystemExit(f"Unexpected API response: {raw}")
+
+          content = data["choices"][0]["message"]["content"]
+          Path("pr_body.md").write_text(content.strip() + "\n")
+          PY
+
+      - name: Update PR description
+        if: steps.check_body.outputs.generate == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr edit "${{ github.event.pull_request.number }}" --body-file pr_body.md
