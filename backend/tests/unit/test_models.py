@@ -2,8 +2,8 @@
 
 from uuid import uuid4
 
-import pytest
 from pydantic import ValidationError
+import pytest
 
 from src.models.document import LegalDocument, ProcessingStatus
 from src.models.query import QueryResponse, SourceDocument, UserQuery
