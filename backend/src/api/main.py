@@ -7,15 +7,15 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from ..config.settings import settings
+from ..services.document.storage import DocumentStorage
 from ..services.session.manager import SessionManager
 from ..services.vectordb.client import ChromaDBClient
-from ..services.document.storage import DocumentStorage
 from . import dependencies
 
 # Configure logging
 logging.basicConfig(
     level=getattr(logging, settings.log_level),
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 
 logger = logging.getLogger(__name__)
@@ -42,13 +42,15 @@ async def lifespan(app: FastAPI):
             reranker_model=settings.reranker_model,
             rrf_k=settings.rrf_k,
             dense_weight=settings.dense_weight,
-            sparse_weight=settings.sparse_weight
+            sparse_weight=settings.sparse_weight,
         )
         dependencies.chromadb_client.initialize()
 
         # Initialize Session Manager
         logger.info("Initializing Session Manager...")
-        dependencies.session_manager = SessionManager(timeout_minutes=settings.session_timeout_minutes)
+        dependencies.session_manager = SessionManager(
+            timeout_minutes=settings.session_timeout_minutes
+        )
         await dependencies.session_manager.start_cleanup_task()
 
         # Initialize Document Storage
@@ -86,7 +88,7 @@ app = FastAPI(
     title="Legal Document Assistant API",
     description="Text-based legal document Q&A system using RAG",
     version="0.1.0",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 # Configure CORS
@@ -101,8 +103,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Import and include routers
-from .routes import health, query, sessions, documents
+# Import and include routers (must be after app creation to avoid circular imports)
+from .routes import documents, health, query, sessions  # noqa: E402
 
 app.include_router(health.router, tags=["health"])
 app.include_router(query.router, prefix="/api", tags=["query"])

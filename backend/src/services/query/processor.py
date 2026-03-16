@@ -2,14 +2,13 @@
 
 import logging
 import time
-from typing import List, Optional
 from uuid import UUID
 
 from ...models.chunk import SearchResult
 from ...models.query import QueryResponse, SourceDocument
 from ...models.session import ConversationSession
 from ..llm.ollama_client import OllamaClient
-from ..llm.prompts import build_rag_prompt, build_contextual_prompt
+from ..llm.prompts import build_contextual_prompt, build_rag_prompt
 from ..vectordb.client import ChromaDBClient
 
 logger = logging.getLogger(__name__)
@@ -24,7 +23,7 @@ class QueryProcessor:
         llm_client: OllamaClient,
         num_results: int = 5,
         use_hybrid_search: bool = True,
-        use_reranking: bool = True
+        use_reranking: bool = True,
     ):
         """
         Initialize query processor.
@@ -43,10 +42,8 @@ class QueryProcessor:
         self.use_reranking = use_reranking
 
     async def process_query(
-        self,
-        query_text: str,
-        session: Optional[ConversationSession] = None
-    ) -> tuple[str, List[SearchResult], float]:
+        self, query_text: str, session: ConversationSession | None = None
+    ) -> tuple[str, list[SearchResult], float]:
         """
         Process a user query using RAG pipeline.
 
@@ -61,18 +58,18 @@ class QueryProcessor:
             if self.use_hybrid_search and self.vectordb_client.enable_hybrid_search:
                 logger.info("Using hybrid retrieval (dense + sparse + reranking)")
                 from ...config.settings import settings
+
                 search_results = self.vectordb_client.search_hybrid(
                     query=query_text,
                     top_k=self.num_results,
                     apply_reranking=self.use_reranking,
                     dense_top_k=settings.dense_retrieval_top_k,
-                    sparse_top_k=settings.sparse_retrieval_top_k
+                    sparse_top_k=settings.sparse_retrieval_top_k,
                 )
             else:
                 logger.info("Using dense retrieval only")
                 search_results = self.vectordb_client.search_similar(
-                    query=query_text,
-                    n_results=self.num_results
+                    query=query_text, n_results=self.num_results
                 )
 
             if not search_results:
@@ -80,7 +77,7 @@ class QueryProcessor:
                 return (
                     "I don't have any documents to reference. Please upload legal documents first.",
                     [],
-                    (time.time() - start_time) * 1000
+                    (time.time() - start_time) * 1000,
                 )
 
             # Step 2: Build prompt
@@ -90,21 +87,18 @@ class QueryProcessor:
                 prompt = build_contextual_prompt(
                     query=query_text,
                     search_results=search_results,
-                    conversation_context=context_messages
+                    conversation_context=context_messages,
                 )
             else:
                 # Use simple RAG prompt
-                prompt = build_rag_prompt(
-                    query=query_text,
-                    search_results=search_results
-                )
+                prompt = build_rag_prompt(query=query_text, search_results=search_results)
 
             # Step 3: Generate response using LLM
             logger.info("Generating response with LLM")
             response_text = await self.llm_client.generate_response(
                 prompt=prompt,
                 context_messages=None,  # Context already in prompt
-                temperature=0.7
+                temperature=0.7,
             )
 
             # Calculate processing time
@@ -125,9 +119,9 @@ class QueryProcessor:
     def format_query_response(
         self,
         response_text: str,
-        search_results: List[SearchResult],
+        search_results: list[SearchResult],
         session_id: UUID,
-        processing_time_ms: float
+        processing_time_ms: float,
     ) -> QueryResponse:
         """
         Format the query response for API output.
@@ -141,7 +135,7 @@ class QueryProcessor:
                 chunk_id=result.chunk_id,
                 content=result.content,
                 page_number=result.page_number,
-                similarity_score=result.similarity_score
+                similarity_score=result.similarity_score,
             )
             for result in search_results
         ]
@@ -150,5 +144,5 @@ class QueryProcessor:
             response_text=response_text,
             source_documents=source_documents,
             session_id=session_id,
-            processing_time_ms=processing_time_ms
+            processing_time_ms=processing_time_ms,
         )

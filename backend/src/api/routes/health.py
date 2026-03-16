@@ -1,7 +1,7 @@
 """Health check endpoint."""
 
 from datetime import datetime
-from typing import Dict, Any
+from typing import Any
 
 from fastapi import APIRouter, Depends
 
@@ -15,8 +15,8 @@ router = APIRouter()
 @router.get("/health")
 async def health_check(
     chromadb_client: ChromaDBClient = Depends(get_chromadb_client),
-    session_manager: SessionManager = Depends(get_session_manager)
-) -> Dict[str, Any]:
+    session_manager: SessionManager = Depends(get_session_manager),
+) -> dict[str, Any]:
     """
     Health check endpoint.
 
@@ -36,19 +36,15 @@ async def health_check(
                     "status": "operational",
                     "total_chunks": chromadb_stats["total_chunks"],
                     "collection_name": chromadb_stats["collection_name"],
-                    "embedding_model": chromadb_stats["embedding_model"]
+                    "embedding_model": chromadb_stats["embedding_model"],
                 },
                 "sessions": {
                     "status": "operational",
                     "active_sessions": session_stats["total_sessions"],
-                    "timeout_minutes": session_stats["timeout_minutes"]
-                }
-            }
+                    "timeout_minutes": session_stats["timeout_minutes"],
+                },
+            },
         }
 
     except Exception as e:
-        return {
-            "status": "unhealthy",
-            "timestamp": datetime.utcnow().isoformat(),
-            "error": str(e)
-        }
+        return {"status": "unhealthy", "timestamp": datetime.utcnow().isoformat(), "error": str(e)}

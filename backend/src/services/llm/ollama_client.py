@@ -1,7 +1,7 @@
 """Ollama LLM client for text generation."""
 
 import logging
-from typing import List, Dict, Optional, AsyncGenerator
+from collections.abc import AsyncGenerator
 
 import ollama
 
@@ -26,9 +26,9 @@ class OllamaClient:
     async def generate_response(
         self,
         prompt: str,
-        context_messages: Optional[List[Dict[str, str]]] = None,
+        context_messages: list[dict[str, str]] | None = None,
         temperature: float = 0.7,
-        max_tokens: int = 2000
+        max_tokens: int = 2000,
     ) -> str:
         """
         Generate a response using Ollama.
@@ -44,10 +44,7 @@ class OllamaClient:
                 messages.extend(context_messages)
 
             # Add current prompt
-            messages.append({
-                "role": "user",
-                "content": prompt
-            })
+            messages.append({"role": "user", "content": prompt})
 
             logger.info(f"Generating response with {len(messages)} messages using {self.model}")
 
@@ -58,10 +55,10 @@ class OllamaClient:
                 options={
                     "temperature": temperature,
                     "num_predict": max_tokens,
-                }
+                },
             )
 
-            generated_text = response['message']['content']
+            generated_text = response["message"]["content"]
             logger.info(f"Generated response ({len(generated_text)} chars)")
 
             return generated_text
@@ -73,9 +70,9 @@ class OllamaClient:
     async def generate_response_stream(
         self,
         prompt: str,
-        context_messages: Optional[List[Dict[str, str]]] = None,
+        context_messages: list[dict[str, str]] | None = None,
         temperature: float = 0.7,
-        max_tokens: int = 2000
+        max_tokens: int = 2000,
     ) -> AsyncGenerator[str, None]:
         """
         Generate a streaming response using Ollama.
@@ -101,12 +98,11 @@ class OllamaClient:
                 messages.extend(context_messages)
 
             # Add current prompt
-            messages.append({
-                "role": "user",
-                "content": prompt
-            })
+            messages.append({"role": "user", "content": prompt})
 
-            logger.info(f"Generating streaming response with {len(messages)} messages using {self.model}")
+            logger.info(
+                f"Generating streaming response with {len(messages)} messages using {self.model}"
+            )
 
             # Call Ollama chat API with streaming
             stream = self.client.chat(
@@ -116,13 +112,13 @@ class OllamaClient:
                 options={
                     "temperature": temperature,
                     "num_predict": max_tokens,
-                }
+                },
             )
 
             # Yield each chunk as it arrives
             for chunk in stream:
-                if 'message' in chunk and 'content' in chunk['message']:
-                    content = chunk['message']['content']
+                if "message" in chunk and "content" in chunk["message"]:
+                    content = chunk["message"]["content"]
                     if content:
                         yield content
 
@@ -139,7 +135,7 @@ class OllamaClient:
         """
         try:
             models = self.client.list()
-            available_models = [model['name'] for model in models.get('models', [])]
+            available_models = [model["name"] for model in models.get("models", [])]
 
             # Check if our model is in the list
             is_available = any(self.model in model for model in available_models)

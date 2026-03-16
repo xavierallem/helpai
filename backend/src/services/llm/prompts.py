@@ -1,10 +1,9 @@
 """Prompt templates for LLM-based query processing."""
 
-from typing import List
 from ...models.chunk import SearchResult
 
 
-def build_rag_prompt(query: str, search_results: List[SearchResult]) -> str:
+def build_rag_prompt(query: str, search_results: list[SearchResult]) -> str:
     """
     Build a RAG (Retrieval-Augmented Generation) prompt.
 
@@ -41,14 +40,12 @@ Answer:"""
 
 
 def build_contextual_prompt(
-    query: str,
-    search_results: List[SearchResult],
-    conversation_context: List[dict]
+    query: str, search_results: list[SearchResult], conversation_context: list[dict]
 ) -> str:
     """
     Build a prompt with conversation context for multi-turn dialogue.
 
- 
+
     """
     # Build context from search results
     context_parts = []
@@ -68,7 +65,7 @@ def build_contextual_prompt(
         if recent_messages:
             conversation_summary = "\n\nPrevious conversation:\n"
             for msg in recent_messages:
-                role = msg['role'].capitalize()
+                role = msg["role"].capitalize()
                 conversation_summary += f"{role}: {msg['content']}\n"
 
     # Build the full prompt

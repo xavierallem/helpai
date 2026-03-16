@@ -2,7 +2,6 @@
 
 import logging
 from pathlib import Path
-from typing import List, Tuple
 
 import fitz  # PyMuPDF
 
@@ -13,7 +12,7 @@ class PDFExtractor:
     """Extracts text from PDF documents."""
 
     @staticmethod
-    def extract_text_from_pdf(file_path: Path) -> List[Tuple[int, str]]:
+    def extract_text_from_pdf(file_path: Path) -> list[tuple[int, str]]:
         """
         Extract text from a PDF file.
 

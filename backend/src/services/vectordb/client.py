@@ -2,14 +2,13 @@
 
 import logging
 from pathlib import Path
-from typing import List, Optional
 
 import chromadb
 from chromadb.config import Settings as ChromaSettings
 from sentence_transformers import SentenceTransformer
 
 from ...models.chunk import DocumentChunk, SearchResult
-from ..retrieval import BM25Retriever, Reranker, HybridRetriever
+from ..retrieval import BM25Retriever, HybridRetriever, Reranker
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +27,7 @@ class ChromaDBClient:
         reranker_model: str = "ms-marco-MiniLM-L-12-v2",
         rrf_k: int = 60,
         dense_weight: float = 0.5,
-        sparse_weight: float = 0.5
+        sparse_weight: float = 0.5,
     ):
         """
         Initialize ChromaDB client.
@@ -50,14 +49,14 @@ class ChromaDBClient:
         self.dense_weight = dense_weight
         self.sparse_weight = sparse_weight
 
-        self.client: Optional[chromadb.ClientAPI] = None
-        self.collection: Optional[chromadb.Collection] = None
-        self.embedding_model: Optional[SentenceTransformer] = None
+        self.client: chromadb.ClientAPI | None = None
+        self.collection: chromadb.Collection | None = None
+        self.embedding_model: SentenceTransformer | None = None
 
         # Hybrid search components
-        self.bm25_retriever: Optional[BM25Retriever] = None
-        self.reranker: Optional[Reranker] = None
-        self.hybrid_retriever: Optional[HybridRetriever] = None
+        self.bm25_retriever: BM25Retriever | None = None
+        self.reranker: Reranker | None = None
+        self.hybrid_retriever: HybridRetriever | None = None
 
     def initialize(self) -> None:
         """Initialize ChromaDB client and collection."""
@@ -68,10 +67,7 @@ class ChromaDBClient:
             # Initialize ChromaDB client
             self.client = chromadb.PersistentClient(
                 path=str(self.persist_directory),
-                settings=ChromaSettings(
-                    anonymized_telemetry=False,
-                    allow_reset=True
-                )
+                settings=ChromaSettings(anonymized_telemetry=False, allow_reset=True),
             )
 
             # Initialize embedding model
@@ -81,7 +77,7 @@ class ChromaDBClient:
             # Get or create collection
             self.collection = self.client.get_or_create_collection(
                 name=self.COLLECTION_NAME,
-                metadata={"description": "Legal documents and their chunks"}
+                metadata={"description": "Legal documents and their chunks"},
             )
 
             logger.info(
@@ -108,7 +104,7 @@ class ChromaDBClient:
                     reranker=self.reranker,
                     rrf_k=self.rrf_k,
                     dense_weight=self.dense_weight,
-                    sparse_weight=self.sparse_weight
+                    sparse_weight=self.sparse_weight,
                 )
 
                 logger.info("Hybrid search components initialized successfully")
@@ -117,7 +113,7 @@ class ChromaDBClient:
             logger.error(f"Failed to initialize ChromaDB: {e}")
             raise
 
-    def add_chunks(self, chunks: List[DocumentChunk]) -> None:
+    def add_chunks(self, chunks: list[DocumentChunk]) -> None:
         """
         Add document chunks to the vector database.
 
@@ -147,17 +143,12 @@ class ChromaDBClient:
 
             # Generate embeddings
             embeddings = self.embedding_model.encode(
-                documents,
-                show_progress_bar=False,
-                convert_to_numpy=True
+                documents, show_progress_bar=False, convert_to_numpy=True
             ).tolist()
 
             # Add to collection
             self.collection.add(
-                ids=ids,
-                documents=documents,
-                embeddings=embeddings,
-                metadatas=metadatas
+                ids=ids, documents=documents, embeddings=embeddings, metadatas=metadatas
             )
 
             logger.info(f"Added {len(chunks)} chunks to ChromaDB")
@@ -171,11 +162,7 @@ class ChromaDBClient:
             logger.error(f"Failed to add chunks to ChromaDB: {e}")
             raise
 
-    def search_similar(
-        self,
-        query: str,
-        n_results: int = 5
-    ) -> List[SearchResult]:
+    def search_similar(self, query: str, n_results: int = 5) -> list[SearchResult]:
         """
         Search for similar chunks using semantic search.
 
@@ -186,16 +173,14 @@ class ChromaDBClient:
         try:
             # Generate query embedding
             query_embedding = self.embedding_model.encode(
-                [query],
-                show_progress_bar=False,
-                convert_to_numpy=True
+                [query], show_progress_bar=False, convert_to_numpy=True
             ).tolist()[0]
 
             # Search in ChromaDB
             results = self.collection.query(
                 query_embeddings=[query_embedding],
                 n_results=n_results,
-                include=["documents", "metadatas", "distances"]
+                include=["documents", "metadatas", "distances"],
             )
 
             # Convert to SearchResult objects
@@ -206,7 +191,7 @@ class ChromaDBClient:
                         chunk_id=results["ids"][0][i],
                         content=results["documents"][0][i],
                         metadata=results["metadatas"][0][i],
-                        distance=results["distances"][0][i]
+                        distance=results["distances"][0][i],
                     )
                     search_results.append(search_result)
 
@@ -223,8 +208,8 @@ class ChromaDBClient:
         top_k: int = 5,
         apply_reranking: bool = True,
         dense_top_k: int = 20,
-        sparse_top_k: int = 20
-    ) -> List[SearchResult]:
+        sparse_top_k: int = 20,
+    ) -> list[SearchResult]:
         """
         Search using hybrid retrieval (dense + sparse) with optional reranking.
 
@@ -245,7 +230,7 @@ class ChromaDBClient:
                 top_k=top_k,
                 apply_reranking=apply_reranking and self.enable_reranking,
                 dense_top_k=dense_top_k,
-                sparse_top_k=sparse_top_k
+                sparse_top_k=sparse_top_k,
             )
 
             logger.info(f"Hybrid search returned {len(hybrid_results)} results")
@@ -271,9 +256,7 @@ class ChromaDBClient:
             raise RuntimeError("ChromaDB client not initialized. Call initialize() first.")
 
         try:
-            self.collection.delete(
-                where={"document_id": document_id}
-            )
+            self.collection.delete(where={"document_id": document_id})
             logger.info(f"Deleted chunks for document {document_id} from ChromaDB")
 
             # Also delete from BM25 index if hybrid search is enabled
@@ -299,7 +282,7 @@ class ChromaDBClient:
                 "collection_name": self.COLLECTION_NAME,
                 "embedding_model": self.EMBEDDING_MODEL,
                 "hybrid_search_enabled": self.enable_hybrid_search,
-                "reranking_enabled": self.enable_reranking
+                "reranking_enabled": self.enable_reranking,
             }
 
             # Add hybrid search stats if enabled

@@ -1,10 +1,10 @@
 """BM25 sparse retrieval service for keyword-based document search."""
 
 import logging
-from typing import List, Dict, Optional
-from rank_bm25 import BM25Okapi
 import re
 from collections import defaultdict
+
+from rank_bm25 import BM25Okapi
 
 from ...models.chunk import DocumentChunk, SearchResult
 
@@ -18,22 +18,22 @@ class BM25Retriever:
 
     def __init__(self):
         """Initialize the BM25 retriever."""
-        self.bm25: Optional[BM25Okapi] = None
-        self.chunks: List[DocumentChunk] = []
-        self.chunk_id_to_idx: Dict[str, int] = {}
-        self.document_chunks: Dict[str, List[int]] = defaultdict(list)
+        self.bm25: BM25Okapi | None = None
+        self.chunks: list[DocumentChunk] = []
+        self.chunk_id_to_idx: dict[str, int] = {}
+        self.document_chunks: dict[str, list[int]] = defaultdict(list)
         logger.info("BM25Retriever initialized")
 
-    def _tokenize(self, text: str) -> List[str]:
+    def _tokenize(self, text: str) -> list[str]:
         """
         Simple tokenization: lowercase and split on non-alphanumeric characters.
 
         """
         # Convert to lowercase and split on non-alphanumeric characters
-        tokens = re.findall(r'\w+', text.lower())
+        tokens = re.findall(r"\w+", text.lower())
         return tokens
 
-    def add_chunks(self, chunks: List[DocumentChunk]) -> None:
+    def add_chunks(self, chunks: list[DocumentChunk]) -> None:
         """
         Add document chunks to the BM25 index.
 
@@ -69,7 +69,7 @@ class BM25Retriever:
         self.bm25 = BM25Okapi(tokenized_corpus)
         logger.debug(f"BM25 index rebuilt with {len(self.chunks)} chunks")
 
-    def search(self, query: str, top_k: int = 10) -> List[SearchResult]:
+    def search(self, query: str, top_k: int = 10) -> list[SearchResult]:
         """
         Search for relevant chunks using BM25.
         """
@@ -84,14 +84,14 @@ class BM25Retriever:
         scores = self.bm25.get_scores(tokenized_query)
 
         # Get top-k indices
-        top_indices = sorted(
-            range(len(scores)),
-            key=lambda i: scores[i],
-            reverse=True
-        )[:top_k]
+        top_indices = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)[:top_k]
 
         # Get max score for normalization
-        max_score = max(scores[idx] for idx in top_indices if scores[idx] > 0) if top_indices and scores[top_indices[0]] > 0 else 1.0
+        max_score = (
+            max(scores[idx] for idx in top_indices if scores[idx] > 0)
+            if top_indices and scores[top_indices[0]] > 0
+            else 1.0
+        )
 
         # Convert to SearchResult objects
         results = []
@@ -100,14 +100,16 @@ class BM25Retriever:
                 chunk = self.chunks[idx]
                 # Normalize BM25 score to 0-1 range
                 normalized_score = min(1.0, scores[idx] / max_score) if max_score > 0 else 0.0
-                results.append(SearchResult(
-                    chunk_id=chunk.chunk_id,
-                    document_id=chunk.document_id,
-                    content=chunk.content,
-                    similarity_score=float(normalized_score),
-                    page_number=chunk.page_number,
-                    metadata=chunk.metadata
-                ))
+                results.append(
+                    SearchResult(
+                        chunk_id=chunk.chunk_id,
+                        document_id=chunk.document_id,
+                        content=chunk.content,
+                        similarity_score=float(normalized_score),
+                        page_number=chunk.page_number,
+                        metadata=chunk.metadata,
+                    )
+                )
 
         logger.info(f"BM25 search for '{query[:50]}...' returned {len(results)} results")
         return results
@@ -149,14 +151,14 @@ class BM25Retriever:
         logger.info(f"Removed {chunks_removed} chunks for document {document_id} from BM25 index")
         return chunks_removed
 
-    def get_stats(self) -> Dict:
+    def get_stats(self) -> dict:
         """
         Get statistics about the BM25 index.
         """
         return {
             "total_chunks": len(self.chunks),
             "total_documents": len(self.document_chunks),
-            "index_ready": self.bm25 is not None
+            "index_ready": self.bm25 is not None,
         }
 
     def clear(self) -> None:

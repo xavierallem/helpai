@@ -3,7 +3,6 @@
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional
 from uuid import UUID
 
 from ...models.document import LegalDocument, ProcessingStatus
@@ -22,18 +21,13 @@ class DocumentStorage:
             upload_dir: Directory for storing uploaded files
         """
         self.upload_dir = upload_dir
-        self.documents: Dict[UUID, LegalDocument] = {}
+        self.documents: dict[UUID, LegalDocument] = {}
 
         # Ensure upload directory exists
         self.upload_dir.mkdir(parents=True, exist_ok=True)
         logger.info(f"Document storage initialized at {upload_dir}")
 
-    def create_document(
-        self,
-        title: str,
-        file_path: str,
-        file_size_bytes: int
-    ) -> LegalDocument:
+    def create_document(self, title: str, file_path: str, file_size_bytes: int) -> LegalDocument:
         """
         Create a new document entry.
 
@@ -42,7 +36,7 @@ class DocumentStorage:
             title=title,
             file_path=file_path,
             file_size_bytes=file_size_bytes,
-            processing_status=ProcessingStatus.PENDING
+            processing_status=ProcessingStatus.PENDING,
         )
 
         self.documents[document.document_id] = document
@@ -50,14 +44,14 @@ class DocumentStorage:
 
         return document
 
-    def get_document(self, document_id: UUID) -> Optional[LegalDocument]:
+    def get_document(self, document_id: UUID) -> LegalDocument | None:
         """
         Get a document by ID.
 
         """
         return self.documents.get(document_id)
 
-    def list_documents(self) -> List[LegalDocument]:
+    def list_documents(self) -> list[LegalDocument]:
         """
         List all documents.
 
@@ -68,8 +62,8 @@ class DocumentStorage:
         self,
         document_id: UUID,
         status: ProcessingStatus,
-        error_message: Optional[str] = None,
-        total_chunks: int = 0
+        error_message: str | None = None,
+        total_chunks: int = 0,
     ) -> None:
         """
         Update document processing status.
@@ -91,8 +85,7 @@ class DocumentStorage:
             document.processed_at = datetime.utcnow()
             document.total_chunks = total_chunks
             logger.info(
-                f"Document {document_id} processing completed. "
-                f"Created {total_chunks} chunks."
+                f"Document {document_id} processing completed. Created {total_chunks} chunks."
             )
 
         elif status == ProcessingStatus.FAILED:

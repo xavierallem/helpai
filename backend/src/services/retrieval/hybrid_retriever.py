@@ -1,7 +1,6 @@
 """Hybrid retrieval combining dense and sparse search with reranking."""
 
 import logging
-from typing import List, Dict, Optional
 from collections import defaultdict
 
 from ...models.chunk import SearchResult
@@ -21,10 +20,10 @@ class HybridRetriever:
     def __init__(
         self,
         bm25_retriever: BM25Retriever,
-        reranker: Optional[Reranker] = None,
+        reranker: Reranker | None = None,
         rrf_k: int = 60,
         dense_weight: float = 0.5,
-        sparse_weight: float = 0.5
+        sparse_weight: float = 0.5,
     ):
 
         self.bm25_retriever = bm25_retriever
@@ -39,16 +38,14 @@ class HybridRetriever:
         )
 
     def _reciprocal_rank_fusion(
-        self,
-        dense_results: List[SearchResult],
-        sparse_results: List[SearchResult]
-    ) -> List[SearchResult]:
+        self, dense_results: list[SearchResult], sparse_results: list[SearchResult]
+    ) -> list[SearchResult]:
         """
         Merge results using Reciprocal Rank Fusion (RRF).
         """
         # Create a mapping of chunk_id to SearchResult
-        chunk_map: Dict[str, SearchResult] = {}
-        rrf_scores: Dict[str, float] = defaultdict(float)
+        chunk_map: dict[str, SearchResult] = {}
+        rrf_scores: dict[str, float] = defaultdict(float)
 
         # Process dense results
         for rank, result in enumerate(dense_results, start=1):
@@ -66,11 +63,7 @@ class HybridRetriever:
             rrf_scores[chunk_id] += rrf_score
 
         # Sort by RRF score
-        sorted_chunk_ids = sorted(
-            rrf_scores.keys(),
-            key=lambda cid: rrf_scores[cid],
-            reverse=True
-        )
+        sorted_chunk_ids = sorted(rrf_scores.keys(), key=lambda cid: rrf_scores[cid], reverse=True)
 
         # Create merged results with RRF scores
         merged_results = []
@@ -87,8 +80,8 @@ class HybridRetriever:
                 metadata={
                     **(result.metadata or {}),
                     "rrf_score": str(rrf_scores[chunk_id]),
-                    "original_score": str(result.similarity_score)
-                }
+                    "original_score": str(result.similarity_score),
+                },
             )
             merged_results.append(merged_result)
 
@@ -102,12 +95,12 @@ class HybridRetriever:
     def retrieve(
         self,
         query: str,
-        dense_results: List[SearchResult],
+        dense_results: list[SearchResult],
         top_k: int = 5,
         apply_reranking: bool = True,
         dense_top_k: int = 20,
-        sparse_top_k: int = 20
-    ) -> List[SearchResult]:
+        sparse_top_k: int = 20,
+    ) -> list[SearchResult]:
         """
         Perform hybrid retrieval combining dense and sparse search.
 
@@ -119,8 +112,7 @@ class HybridRetriever:
         sparse_results = self.bm25_retriever.search(query, top_k=sparse_top_k)
 
         logger.info(
-            f"Hybrid retrieval: {len(dense_results)} dense + "
-            f"{len(sparse_results)} sparse results"
+            f"Hybrid retrieval: {len(dense_results)} dense + {len(sparse_results)} sparse results"
         )
 
         # Merge using RRF
@@ -130,11 +122,9 @@ class HybridRetriever:
         if apply_reranking and self.reranker and self.reranker.is_available():
             logger.info("Applying reranking to hybrid results")
             # Take more results for reranking (e.g., 2x top_k) then rerank to top_k
-            rerank_candidates = merged_results[:top_k * 2]
+            rerank_candidates = merged_results[: top_k * 2]
             final_results = self.reranker.rerank(
-                query=query,
-                results=rerank_candidates,
-                top_k=top_k
+                query=query, results=rerank_candidates, top_k=top_k
             )
         else:
             # No reranking, just return top_k results
@@ -143,7 +133,7 @@ class HybridRetriever:
         logger.info(f"Hybrid retrieval returned {len(final_results)} final results")
         return final_results
 
-    def get_stats(self) -> Dict:
+    def get_stats(self) -> dict:
         """
         Get statistics about the hybrid retriever.
 
@@ -153,5 +143,5 @@ class HybridRetriever:
             "reranker_available": self.reranker.is_available() if self.reranker else False,
             "rrf_k": self.rrf_k,
             "dense_weight": self.dense_weight,
-            "sparse_weight": self.sparse_weight
+            "sparse_weight": self.sparse_weight,
         }

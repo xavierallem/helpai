@@ -1,6 +1,5 @@
 """Document chunk models for vector database storage."""
 
-from typing import Dict, List, Optional
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -10,39 +9,26 @@ class DocumentChunk(BaseModel):
     """Document chunk model for vector database storage."""
 
     chunk_id: str = Field(
-        default_factory=lambda: str(uuid4()),
-        description="Unique identifier for the chunk"
+        default_factory=lambda: str(uuid4()), description="Unique identifier for the chunk"
     )
-    document_id: UUID = Field(
-        ...,
-        description="ID of the parent document"
+    document_id: UUID = Field(..., description="ID of the parent document")
+    content: str = Field(..., description="Text content of the chunk", min_length=1)
+    page_number: int | None = Field(
+        default=None, description="Page number where this chunk appears"
     )
-    content: str = Field(
-        ...,
-        description="Text content of the chunk",
-        min_length=1
-    )
-    page_number: Optional[int] = Field(
-        default=None,
-        description="Page number where this chunk appears"
-    )
-    chunk_index: int = Field(
-        ...,
-        description="Sequential index of this chunk within the document"
-    )
-    metadata: Dict[str, str] = Field(
-        default_factory=dict,
-        description="Additional metadata for the chunk"
+    chunk_index: int = Field(..., description="Sequential index of this chunk within the document")
+    metadata: dict[str, str] = Field(
+        default_factory=dict, description="Additional metadata for the chunk"
     )
 
-    def to_chromadb_format(self) -> tuple[str, str, Dict]:
+    def to_chromadb_format(self) -> tuple[str, str, dict]:
         """
         Convert chunk to ChromaDB storage format.
         """
         chromadb_metadata = {
             "document_id": str(self.document_id),
             "chunk_index": str(self.chunk_index),
-            **self.metadata
+            **self.metadata,
         }
 
         if self.page_number is not None:
@@ -54,40 +40,18 @@ class DocumentChunk(BaseModel):
 class SearchResult(BaseModel):
     """Search result from vector database."""
 
-    chunk_id: str = Field(
-        ...,
-        description="ID of the matching chunk"
-    )
-    document_id: UUID = Field(
-        ...,
-        description="ID of the source document"
-    )
-    content: str = Field(
-        ...,
-        description="Text content of the matching chunk"
-    )
+    chunk_id: str = Field(..., description="ID of the matching chunk")
+    document_id: UUID = Field(..., description="ID of the source document")
+    content: str = Field(..., description="Text content of the matching chunk")
     similarity_score: float = Field(
-        ...,
-        description="Similarity score (0-1, higher is more similar)",
-        ge=0.0,
-        le=1.0
+        ..., description="Similarity score (0-1, higher is more similar)", ge=0.0, le=1.0
     )
-    page_number: Optional[int] = Field(
-        default=None,
-        description="Page number of the chunk"
-    )
-    metadata: Dict[str, str] = Field(
-        default_factory=dict,
-        description="Additional metadata"
-    )
+    page_number: int | None = Field(default=None, description="Page number of the chunk")
+    metadata: dict[str, str] = Field(default_factory=dict, description="Additional metadata")
 
     @classmethod
     def from_chromadb_result(
-        cls,
-        chunk_id: str,
-        content: str,
-        metadata: Dict,
-        distance: float
+        cls, chunk_id: str, content: str, metadata: dict, distance: float
     ) -> "SearchResult":
         """
         Create SearchResult from ChromaDB query result.
@@ -111,5 +75,5 @@ class SearchResult(BaseModel):
             content=content,
             similarity_score=similarity_score,
             page_number=page_number,
-            metadata=metadata
+            metadata=metadata,
         )

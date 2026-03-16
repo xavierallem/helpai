@@ -3,7 +3,6 @@
 import asyncio
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, Optional
 from uuid import UUID
 
 from ...models.session import ConversationSession
@@ -22,8 +21,8 @@ class SessionManager:
             timeout_minutes: Session timeout in minutes
         """
         self.timeout_minutes = timeout_minutes
-        self.sessions: Dict[UUID, ConversationSession] = {}
-        self._cleanup_task: Optional[asyncio.Task] = None
+        self.sessions: dict[UUID, ConversationSession] = {}
+        self._cleanup_task: asyncio.Task | None = None
 
     def create_session(self) -> ConversationSession:
         """
@@ -35,7 +34,7 @@ class SessionManager:
         logger.info(f"Created new session: {session.session_id}")
         return session
 
-    def get_session(self, session_id: UUID) -> Optional[ConversationSession]:
+    def get_session(self, session_id: UUID) -> ConversationSession | None:
         """
         Get an existing session by ID.
 
@@ -47,10 +46,7 @@ class SessionManager:
             session.last_activity = datetime.utcnow()
         return session
 
-    def get_or_create_session(
-        self,
-        session_id: Optional[UUID] = None
-    ) -> ConversationSession:
+    def get_or_create_session(self, session_id: UUID | None = None) -> ConversationSession:
         """
         Get existing session or create a new one.
 
@@ -60,9 +56,7 @@ class SessionManager:
             session = self.get_session(session_id)
             if session:
                 return session
-            logger.warning(
-                f"Session {session_id} not found or expired, creating new session"
-            )
+            logger.warning(f"Session {session_id} not found or expired, creating new session")
 
         return self.create_session()
 
@@ -139,7 +133,4 @@ class SessionManager:
         Get session manager statistics.
 
         """
-        return {
-            "total_sessions": len(self.sessions),
-            "timeout_minutes": self.timeout_minutes
-        }
+        return {"total_sessions": len(self.sessions), "timeout_minutes": self.timeout_minutes}
